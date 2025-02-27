@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">DuckIt</string>
+    <string name="post_list_screen_title">Duck It Posts</string>
+    <string name="add_new_post_title">Add New DuckIt</string>
+    <string name="enter_an_eye_catching_headline">Enter an eye-catching headline</string>
+    <string name="enter_url_for_duck_image">Enter URL for duck image</string>
+    <string name="image_url">Image URL</string>
+    <string name="submit_duck">Submit Duck</string>
+</resources>
