@@ -7,3 +7,9 @@ object PostListScreenInfo
 
 @Serializable
 object AddNewPostScreenInfo
+
+@Serializable
+object SignInScreenInfo
+
+@Serializable
+object SignUpScreenInfo

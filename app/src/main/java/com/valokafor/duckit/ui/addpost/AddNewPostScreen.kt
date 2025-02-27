@@ -42,30 +42,43 @@ import timber.log.Timber
 
 @Composable
 fun AddNewPostScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onNavigateToLoginScreen: () -> Unit
 ) {
     val viewModel: AddNewPostViewModel = hiltViewModel()
     val uiState by viewModel.newPostState.collectAsState()
     val headline by viewModel.headline.collectAsState()
     val imageUrl by viewModel.imageUrl.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
-    AddNewPostScreenContent(
-        uiState = uiState,
-        headline = headline,
-        imageUrl = imageUrl,
-        onHeadlineChanged = viewModel::updateHeadline,
-        onImageUrlChanged = viewModel::updateImageUrl,
-        onSubmitButtonClicked = viewModel::createPost,
-        onNavigateBack = onNavigateBack
-    )
+    // Redirect to login if not authenticated
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            onNavigateToLoginScreen()
+        }
+    }
 
-    LaunchedEffect(uiState) {
-        if (uiState is NewPostState.Success) {
-            viewModel.resetState()
-            onNavigateBack()
+    // Only show content if logged in
+    if (isLoggedIn) {
+        AddNewPostScreenContent(
+            uiState = uiState,
+            headline = headline,
+            imageUrl = imageUrl,
+            onHeadlineChanged = viewModel::updateHeadline,
+            onImageUrlChanged = viewModel::updateImageUrl,
+            onSubmitButtonClicked = viewModel::createPost,
+            onNavigateBack = onNavigateBack
+        )
+
+        LaunchedEffect(uiState) {
+            if (uiState is NewPostState.Success) {
+                viewModel.resetState()
+                onNavigateBack()
+            }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

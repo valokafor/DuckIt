@@ -6,4 +6,6 @@
     <string name="enter_url_for_duck_image">Enter URL for duck image</string>
     <string name="image_url">Image URL</string>
     <string name="submit_duck">Submit Duck</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
 </resources>

@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,10 +23,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -39,18 +44,22 @@ import com.valokafor.duckit.ui.theme.DuckItTheme
 @Composable
 fun PostListScreen(
     onNavigateBack: () -> Unit = {},
-    onNavigateToAddPost: () -> Unit
+    onNavigateToAddPost: () -> Unit,
+    onNavigateToLoginScreen: () -> Unit
 ) {
     val postListViewModel: PostListViewModel = hiltViewModel()
     val postState by postListViewModel.postsState.collectAsState()
+    val isLoggedIn by postListViewModel.isLoggedIn.collectAsState()
 
     PostListScreenContent(
         uiState = postState,
+        isLoggedIn = isLoggedIn,
         upVotePost = { postId -> postListViewModel.upVotePost(postId) },
         downVotePost = { postId -> postListViewModel.downVotePost(postId) },
         fetchPosts = { postListViewModel.fetchPosts() },
         onBackPressed = onNavigateBack,
-        onAddPostClick = onNavigateToAddPost
+        onAddPostClick = onNavigateToAddPost,
+        onLoginClick = onNavigateToLoginScreen
     )
 }
 
@@ -58,18 +67,50 @@ fun PostListScreen(
 @Composable
 fun PostListScreenContent(
     uiState: PostsState,
+    isLoggedIn: Boolean,
     upVotePost: (String) -> Unit,
     downVotePost: (String) -> Unit,
     fetchPosts: () -> Unit,
     onBackPressed: () -> Unit,
-    onAddPostClick: () -> Unit
+    onAddPostClick: () -> Unit,
+    onLoginClick: () -> Unit
 ) {
     val screenTitle = stringResource(id = R.string.post_list_screen_title)
+    var showLoginDialog by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    // Login dialog
+    if (showLoginDialog) {
+        AlertDialog(
+            onDismissRequest = { showLoginDialog = false },
+            title = { Text("Login Required") },
+            text = { Text("You need to be logged in to vote on posts.") },
+            confirmButton = {
+                Button(onClick = {
+                    showLoginDialog = false
+                    onLoginClick()
+                }) {
+                    Text("Login")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLoginDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = screenTitle) },
                 actions = {
+                    if (!isLoggedIn) {
+                        TextButton(onClick = onLoginClick) {
+                            Text("Login", color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                     IconButton(onClick = { onBackPressed() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
@@ -114,8 +155,22 @@ fun PostListScreenContent(
                             items(uiState.posts) { post ->
                                 PostItem(
                                     post = post,
-                                    onUpvote = { upVotePost(post.id) },
-                                    onDownVote = { downVotePost(post.id) }
+                                    onUpvote = {
+                                        if (isLoggedIn) {
+                                            upVotePost(post.id)
+                                        } else {
+                                            pendingAction = { upVotePost(post.id) }
+                                            showLoginDialog = true
+                                        }
+                                    },
+                                    onDownVote = {
+                                        if (isLoggedIn) {
+                                            downVotePost(post.id)
+                                        } else {
+                                            pendingAction = { downVotePost(post.id) }
+                                            showLoginDialog = true
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -142,7 +197,6 @@ fun PostListScreenContent(
         }
     }
 }
-
 
 @Composable
 @Preview
@@ -197,7 +251,9 @@ fun PostListScreenPreview() {
             downVotePost = {},
             fetchPosts = {},
             onBackPressed = {},
-            onAddPostClick = {}
+            onAddPostClick = {},
+            onLoginClick = {},
+            isLoggedIn = false
         )
     }
 }
